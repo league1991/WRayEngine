@@ -114,7 +114,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;VULKAN_SAMPLES_BASE_DIR="C:/VulkanSDK/1.2.141.2/Samples";API_NAME="Vulkan";VK_USE_PLATFORM_WIN32_KHR;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.141.2\Include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -142,7 +142,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Application.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
