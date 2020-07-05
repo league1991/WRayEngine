@@ -1,0 +1,7 @@
+WRayEngine/WRayEngine/x64/
+WRayEngine/.vs/
+*.pdb
+*.ilk
+WRayEngine/x64/
+*.filters
+*.user
