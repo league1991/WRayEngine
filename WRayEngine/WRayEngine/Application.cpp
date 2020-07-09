@@ -15,7 +15,7 @@
 #define NUM_SCISSORS NUM_VIEWPORTS
 
 /* Amount of time, in nanoseconds, to wait for a command buffer to complete */
-#define FENCE_TIMEOUT 100000000
+#define FENCE_TIMEOUT 100000000*100
 
 using namespace std;
 Application::~Application() {  }
@@ -451,7 +451,7 @@ void set_image_layout(struct sample_info& info, VkImage image, VkImageAspectFlag
     VkImageLayout new_image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
     /* DEPENDS on info.cmd and info.queue initialized */
 
-    assert(info.cmd != VK_NULL_HANDLE);
+    //assert(info.cmd != VK_NULL_HANDLE);
     assert(info.graphics_queue != VK_NULL_HANDLE);
 
     VkImageMemoryBarrier image_memory_barrier = {};
@@ -780,9 +780,7 @@ void write_ppm(struct sample_info& info, const char* basename) {
 
 void Application::initialize()
 {
-
     VkResult U_ASSERT_ONLY res;
-    struct sample_info info = {};
     char sample_title[] = "Draw Cube";
     const bool depthPresent = true;
 
@@ -799,9 +797,16 @@ void Application::initialize()
     init_device(info);
     init_command_pool(info);
     init_command_buffer(info);
-    execute_begin_command_buffer(info);
+    //execute_begin_command_buffer(info);
     init_device_queue(info);
     init_swap_chain(info);
+
+    per_frame.resize(info.swapchainImageCount);
+    for (int i = 0; i < info.swapchainImageCount; i++)
+    {
+        init_per_frame(info, per_frame[i]);
+    }
+
     init_depth_buffer(info);
     init_texture(info);
     init_uniform_buffer(info);
@@ -821,7 +826,7 @@ void Application::initialize()
     init_descriptor_set(info, true);
     init_pipeline_cache(info);
     init_pipeline(info, depthPresent);
-    init_presentable_image(info);
+    //init_presentable_image(info);
 
     VkClearValue clear_values[2];
     init_clear_color_and_depth(info, clear_values);
@@ -830,7 +835,7 @@ void Application::initialize()
     init_render_pass_begin_info(info, rp_begin);
     rp_begin.clearValueCount = 2;
     rp_begin.pClearValues = clear_values;
-
+    /*
     vkCmdBeginRenderPass(info.cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(info.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
@@ -846,33 +851,61 @@ void Application::initialize()
     vkCmdDraw(info.cmd, 12 * 3, 1, 0, 0);
     vkCmdEndRenderPass(info.cmd);
     res = vkEndCommandBuffer(info.cmd);
-    assert(res == VK_SUCCESS);
+    assert(res == VK_SUCCESS);*/
 
-    VkFence drawFence = {};
-    init_fence(info, drawFence);
-    VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo submit_info = {};
-    init_submit_info(info, submit_info, pipe_stage_flags);
+    //VkFence drawFence = {};
+    //init_fence(info, drawFence);
+    //VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //VkSubmitInfo submit_info = {};
+    //init_submit_info(info, submit_info, pipe_stage_flags);
 
-    /* Queue the command buffer for execution */
-    res = vkQueueSubmit(info.graphics_queue, 1, &submit_info, drawFence);
-    assert(res == VK_SUCCESS);
+    ///* Queue the command buffer for execution */
+    //res = vkQueueSubmit(info.graphics_queue, 1, &submit_info, drawFence);
+    //assert(res == VK_SUCCESS);
 
-    /* Now present the image in the window */
-    VkPresentInfoKHR present = {};
-    init_present_info(info, present);
+    ///* Now present the image in the window */
+    //VkPresentInfoKHR present = {};
+    //init_present_info(info, present);
 
-    /* Make sure command buffer is finished before presenting */
-    do {
-        res = vkWaitForFences(info.device, 1, &drawFence, VK_TRUE, FENCE_TIMEOUT);
-    } while (res == VK_TIMEOUT);
-    assert(res == VK_SUCCESS);
-    res = vkQueuePresentKHR(info.present_queue, &present);
-    assert(res == VK_SUCCESS);
+    ///* Make sure command buffer is finished before presenting */
+    //do {
+    //    res = vkWaitForFences(info.device, 1, &drawFence, VK_TRUE, FENCE_TIMEOUT);
+    //} while (res == VK_TIMEOUT);
+    //assert(res == VK_SUCCESS);
+    //res = vkQueuePresentKHR(info.present_queue, &present);
+    //assert(res == VK_SUCCESS);
 
-    wait_seconds(1);
-    if (info.save_images) write_ppm(info, "template");
+    //wait_seconds(1);
+    //if (info.save_images) write_ppm(info, "template");
 
+}
+
+void Application::update()
+{
+    acquireSemaphore();
+    render();
+    present();
+
+
+    MSG msg;
+    HWND handle;
+    while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+    {
+        if (msg.message == WM_QUIT)
+        {
+        }
+        else
+        {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
+
+    handle = GetActiveWindow();
+}
+
+void Application::destroy()
+{
     vkDestroyFence(info.device, drawFence, NULL);
     vkDestroySemaphore(info.device, info.imageAcquiredSemaphore, NULL);
     destroy_pipeline(info);
@@ -892,6 +925,156 @@ void Application::initialize()
     destroy_device(info);
     destroy_window(info);
     destroy_instance(info);
+}
+
+void Application::acquireSemaphore()
+{
+    // acquire semaphore
+    VkSemaphore acquire_semaphore;
+    if (recycled_semaphores.empty())
+    {
+        VkSemaphoreCreateInfo infos = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+        vkCreateSemaphore(info.device, &infos, nullptr, &acquire_semaphore);
+    }
+    else
+    {
+        acquire_semaphore = recycled_semaphores.back();
+        recycled_semaphores.pop_back();
+    }
+
+    VkResult res = vkAcquireNextImageKHR(info.device, info.swap_chain, UINT64_MAX, acquire_semaphore, VK_NULL_HANDLE, &info.current_buffer);
+
+    if (res != VK_SUCCESS)
+    {
+        recycled_semaphores.push_back(acquire_semaphore);
+        return;
+    }
+
+
+    // If we have outstanding fences for this swapchain image, wait for them to complete first.
+    // After begin frame returns, it is safe to reuse or delete resources which
+    // were used previously.
+    //
+    // We wait for fences which completes N frames earlier, so we do not stall,
+    // waiting for all GPU work to complete before this returns.
+    // Normally, this doesn't really block at all,
+    // since we're waiting for old frames to have been completed, but just in case.
+    if (per_frame[info.current_buffer].queue_submit_fence != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(info.device, 1, &per_frame[info.current_buffer].queue_submit_fence, true, UINT64_MAX);
+        vkResetFences(info.device, 1, &per_frame[info.current_buffer].queue_submit_fence);
+    }
+
+    if (per_frame[info.current_buffer].primary_command_pool != VK_NULL_HANDLE)
+    {
+        vkResetCommandPool(info.device, per_frame[info.current_buffer].primary_command_pool, 0);
+    }
+
+    // Recycle the old semaphore back into the semaphore manager.
+    VkSemaphore old_semaphore = per_frame[info.current_buffer].swapchain_acquire_semaphore;
+
+    if (old_semaphore != VK_NULL_HANDLE)
+    {
+        recycled_semaphores.push_back(old_semaphore);
+    }
+
+    per_frame[info.current_buffer].swapchain_acquire_semaphore = acquire_semaphore;
+
+    //return VK_SUCCESS;
+}
+
+void Application::render()
+{
+    // Render to this framebuffer.
+    VkFramebuffer framebuffer = info.framebuffers[info.current_buffer];
+
+    // Allocate or re-use a primary command buffer.
+    VkCommandBuffer cmd = per_frame[info.current_buffer].primary_command_buffer;
+
+    // We will only submit this once before it's recycled.
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    // Begin command recording
+    vkBeginCommandBuffer(cmd, &begin_info);
+
+    // Set clear color values.
+    VkClearValue clear_value;
+    static float c = 0;
+    clear_value.color = { {0.1f, 0.2f, c+0.2f, 1.0f} };
+    c += 0.01f;
+
+    // Begin the render pass.
+    VkRenderPassBeginInfo rp_begin{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    rp_begin.renderPass = info.render_pass;
+    rp_begin.framebuffer = framebuffer;
+    rp_begin.renderArea.extent.width = info.width;
+    rp_begin.renderArea.extent.height = info.height;
+    rp_begin.clearValueCount = 1;
+    rp_begin.pClearValues = &clear_value;
+    // We will add draw commands in the same command buffer.
+    vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+    // Bind the graphics pipeline.
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
+
+    VkViewport vp{};
+    vp.width = static_cast<float>(info.width);
+    vp.height = static_cast<float>(info.height);
+    vp.minDepth = 0.0f;
+    vp.maxDepth = 1.0f;
+    // Set viewport dynamically
+    vkCmdSetViewport(cmd, 0, 1, &vp);
+
+    VkRect2D scissor{};
+    scissor.extent.width = info.width;
+    scissor.extent.height = info.height;
+    // Set scissor dynamically
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    // Draw three vertices with one instance.
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+
+    // Complete render pass.
+    vkCmdEndRenderPass(cmd);
+
+    // Complete the command buffer.
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+}
+
+void Application::present()
+{
+    VkCommandBuffer cmd = per_frame[info.current_buffer].primary_command_buffer;
+
+    // Submit it to the queue with a release semaphore.
+    if (per_frame[info.current_buffer].swapchain_release_semaphore == VK_NULL_HANDLE)
+    {
+        VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+        VK_CHECK(vkCreateSemaphore(info.device, &semaphore_info, nullptr,
+            &per_frame[info.current_buffer].swapchain_release_semaphore));
+    }
+
+    VkPipelineStageFlags wait_stage{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSubmitInfo infoS{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    infoS.commandBufferCount = 1;
+    infoS.pCommandBuffers = &cmd;
+    infoS.waitSemaphoreCount = 1;
+    infoS.pWaitSemaphores = &per_frame[info.current_buffer].swapchain_acquire_semaphore;
+    infoS.pWaitDstStageMask = &wait_stage;
+    infoS.signalSemaphoreCount = 1;
+    infoS.pSignalSemaphores = &per_frame[info.current_buffer].swapchain_release_semaphore;
+    // Submit command buffer to graphics queue
+    VK_CHECK(vkQueueSubmit(info.present_queue, 1, &infoS, per_frame[info.current_buffer].queue_submit_fence));
+
+    VkPresentInfoKHR present{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+    present.swapchainCount = 1;
+    present.pSwapchains = &info.swap_chain;
+    present.pImageIndices = &info.current_buffer;
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &per_frame[info.current_buffer].swapchain_release_semaphore;
+    // Present swapchain image
+    vkQueuePresentKHR(info.present_queue, &present);
 }
 
 
@@ -1284,7 +1467,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     case WM_PAINT:
         run(info);
-        return 0;
+        break;// return 0;
     default:
         break;
     }
@@ -2146,6 +2329,28 @@ void init_command_buffer(struct sample_info& info) {
     res = vkAllocateCommandBuffers(info.device, &cmd, &info.cmd);
     assert(res == VK_SUCCESS);
 }
+
+void init_per_frame(struct sample_info& info, PerFrame& per_frame)
+{
+    VkFenceCreateInfo infoF{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+    infoF.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK(vkCreateFence(info.device, &infoF, nullptr, &per_frame.queue_submit_fence));
+
+    VkCommandPoolCreateInfo cmd_pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    cmd_pool_info.queueFamilyIndex = info.graphics_queue_family_index;
+    VK_CHECK(vkCreateCommandPool(info.device, &cmd_pool_info, nullptr, &per_frame.primary_command_pool));
+
+    VkCommandBufferAllocateInfo cmd_buf_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+    cmd_buf_info.commandPool = per_frame.primary_command_pool;
+    cmd_buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmd_buf_info.commandBufferCount = 1;
+    VK_CHECK(vkAllocateCommandBuffers(info.device, &cmd_buf_info, &per_frame.primary_command_buffer));
+
+    //per_frame.device = context.device;
+    //per_frame.queue_index = context.graphics_queue_index;
+}
+
 void execute_begin_command_buffer(struct sample_info& info) {
     /* DEPENDS on init_command_buffer() */
     VkResult U_ASSERT_ONLY res;

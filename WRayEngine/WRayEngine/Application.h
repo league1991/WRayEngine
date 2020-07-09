@@ -18,6 +18,17 @@
 #define APP_SHORT_NAME "WRayEngine"
 #define U_ASSERT_ONLY
 
+#define VK_CHECK(x)                                                 \
+	do                                                              \
+	{                                                               \
+		VkResult err = x;                                           \
+		if (err)                                                    \
+		{                                                           \
+			printf("Detected Vulkan error: {}", (err)); \
+			abort();                                                \
+		}                                                           \
+	} while (0)
+
 /*
  * structure to track all objects related to a texture.
  */
@@ -175,6 +186,16 @@ struct sample_info {
     VkRect2D scissor;
 };
 
+
+struct PerFrame
+{
+    VkFence queue_submit_fence = VK_NULL_HANDLE;
+    VkCommandPool primary_command_pool = VK_NULL_HANDLE;
+    VkCommandBuffer primary_command_buffer = VK_NULL_HANDLE;
+    VkSemaphore swapchain_acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore swapchain_release_semaphore = VK_NULL_HANDLE;
+};
+
 VkResult init_global_extension_properties(layer_properties& layer_props);
 
 VkResult init_global_layer_properties(sample_info& info);
@@ -250,6 +271,11 @@ void init_window_size(struct sample_info& info, int32_t default_width,
 
 VkResult init_debug_report_callback(struct sample_info& info,
     PFN_vkDebugReportCallbackEXT dbgFunc);
+
+
+void init_per_frame(struct sample_info& info, PerFrame& per_frame);
+
+
 void destroy_debug_report_callback(struct sample_info& info);
 void destroy_pipeline(struct sample_info& info);
 void destroy_pipeline_cache(struct sample_info& info);
@@ -276,5 +302,20 @@ public:
     ~Application();
 
     void initialize();
+
+    bool shouldExit() { return false; }
+
+    void update();
+
+    void destroy();
+
+private:
+    void acquireSemaphore();
+    void render();
+    void present();
+    std::vector<PerFrame> per_frame;
+    std::vector<VkSemaphore> recycled_semaphores;
+    VkFence drawFence = {};
+    sample_info info;
 };
 

@@ -7,5 +7,11 @@ int main(int argc, char* argv[]) {
 
     app.initialize();
 
+    while (!app.shouldExit())
+    {
+        app.update();
+    }
+
+    app.destroy();
     return 0;
 }
