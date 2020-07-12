@@ -1032,7 +1032,7 @@ void Application::render()
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     // Draw three vertices with one instance.
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+    //vkCmdDraw(cmd, 3, 1, 0, 0);
 
     // Complete render pass.
     vkCmdEndRenderPass(cmd);
