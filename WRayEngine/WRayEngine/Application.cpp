@@ -1031,7 +1031,13 @@ void Application::render()
     // Set scissor dynamically
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline_layout, 0, NUM_DESCRIPTOR_SETS,
+        info.desc_set.data(), 0, NULL);
+
+    const VkDeviceSize offsets[1] = { 0 };
+    vkCmdBindVertexBuffers(cmd, 0, 1, &info.vertex_buffer.buf, offsets);
     // Draw three vertices with one instance.
+    vkCmdDraw(cmd, 12 * 3, 1, 0, 0);
     //vkCmdDraw(cmd, 3, 1, 0, 0);
 
     // Complete render pass.
