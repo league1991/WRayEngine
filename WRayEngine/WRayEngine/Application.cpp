@@ -1025,9 +1025,11 @@ void Application::render()
     vkBeginCommandBuffer(cmd, &begin_info);
 
     // Set clear color values.
-    VkClearValue clear_value;
+    VkClearValue clear_value[2];
     static float c = 0;
-    clear_value.color = { {0.1f, 0.2f, c+0.2f, 1.0f} };
+    clear_value[0].color = { {0.1f, 0.2f, c+0.2f, 1.0f} };
+    clear_value[1].depthStencil.depth = 1;
+    clear_value[1].depthStencil.stencil = 0;
     c += 0.01f;
 
     // Begin the render pass.
@@ -1036,8 +1038,8 @@ void Application::render()
     rp_begin.framebuffer = framebuffer;
     rp_begin.renderArea.extent.width = info.width;
     rp_begin.renderArea.extent.height = info.height;
-    rp_begin.clearValueCount = 1;
-    rp_begin.pClearValues = &clear_value;
+    rp_begin.clearValueCount = 2;
+    rp_begin.pClearValues = clear_value;
     // We will add draw commands in the same command buffer.
     vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
