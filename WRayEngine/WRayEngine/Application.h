@@ -330,6 +330,8 @@ private:
     void acquireSemaphore();
     void render();
     void present();
+
+    void updateCPUData();
     std::vector<PerFrame> per_frame;
     std::vector<VkSemaphore> recycled_semaphores;
     VkFence drawFence = {};

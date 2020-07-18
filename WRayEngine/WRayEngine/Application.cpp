@@ -595,8 +595,37 @@ void Application::acquireSemaphore()
     //return VK_SUCCESS;
 }
 
+void Application::updateCPUData()
+{
+    float fov = glm::radians(45.0f);
+    info.Projection = glm::perspective(fov, static_cast<float>(info.width) / static_cast<float>(info.height), 0.1f, 100.0f);
+    static float offset = 0.f;
+    info.View = glm::lookAt(glm::vec3(-5, 3, -10+ offset),  // Camera is at (-5,3,-10), in World Space
+        glm::vec3(0, 0, 0),     // and looks at the origin
+        glm::vec3(0, -1, 0)     // Head is up (set to 0,-1,0 to look upside-down)
+    );
+    offset += 0.01f;
+
+    info.Model = glm::mat4(1.0f);
+    // Vulkan clip space has inverted Y and half Z.
+    info.Clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.5f, 1.0f);
+
+    info.MVP = info.Clip * info.Projection * info.View * info.Model;
+}
+
 void Application::render()
 {
+    updateCPUData();
+
+    // update uniform buffer
+    {
+        uint8_t* pData;
+        VkResult res = vkMapMemory(info.device, info.uniform_data.mem, 0, info.uniform_data.buffer_info.range, 0, (void**)&pData);
+        assert(res == VK_SUCCESS);
+        memcpy(pData, &info.MVP, sizeof(info.MVP));
+        vkUnmapMemory(info.device, info.uniform_data.mem);
+    }
+
     // Render to this framebuffer.
     VkFramebuffer framebuffer = info.framebuffers[info.current_buffer];
 
