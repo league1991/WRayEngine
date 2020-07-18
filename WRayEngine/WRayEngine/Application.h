@@ -15,6 +15,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "glslang/SPIRV/GlslangToSpv.h"
+
 #define APP_SHORT_NAME "WRayEngine"
 #define U_ASSERT_ONLY
 
@@ -24,7 +26,7 @@
 		VkResult err = x;                                           \
 		if (err)                                                    \
 		{                                                           \
-			printf("Detected Vulkan error: {}", (err)); \
+			printf("Detected Vulkan error: {%d}", (err)); \
 			abort();                                                \
 		}                                                           \
 	} while (0)
@@ -126,7 +128,7 @@ struct sample_info {
     std::vector<swap_chain_buffer> buffers;
     VkSemaphore imageAcquiredSemaphore;
 
-    VkCommandPool cmd_pool;
+    //VkCommandPool cmd_pool;
 
     struct {
         VkFormat format;
@@ -162,7 +164,7 @@ struct sample_info {
     glm::mat4 Clip;
     glm::mat4 MVP;
 
-    VkCommandBuffer cmd; // Buffer for initialization commands
+    //VkCommandBuffer cmd; // Buffer for initialization commands
     VkPipelineLayout pipeline_layout;
     std::vector<VkDescriptorSetLayout> desc_layout;
     VkPipelineCache pipelineCache;
@@ -246,6 +248,7 @@ void init_descriptor_pool(struct sample_info& info, bool use_texture);
 void init_descriptor_set(struct sample_info& info, bool use_texture);
 void init_shaders(struct sample_info& info, const VkShaderModuleCreateInfo* vertShaderCI,
     const VkShaderModuleCreateInfo* fragShaderCI);
+void init_shaders(struct sample_info &info, const char *vertShaderText, const char *fragShaderText);
 void init_pipeline_cache(struct sample_info& info);
 void init_pipeline(struct sample_info& info, VkBool32 include_depth,
     VkBool32 include_vi = true);

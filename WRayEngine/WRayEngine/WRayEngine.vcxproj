@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{2347b8a7-f12a-42a3-9fd2-d0c302cbda10}</ProjectGuid>
     <RootNamespace>WRayEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -114,15 +114,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;VULKAN_SAMPLES_BASE_DIR="C:/VulkanSDK/1.2.141.2/Samples";API_NAME="Vulkan";VK_USE_PLATFORM_WIN32_KHR;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;VULKAN_SAMPLES_BASE_DIR="C:/VulkanSDK/1.2.141.2/Samples";_ITERATOR_DEBUG_LEVEL=0;API_NAME="Vulkan";VK_USE_PLATFORM_WIN32_KHR;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.141.2\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.141.2\Samples\API-Samples\utils;C:\VulkanSDK\1.2.141.2\Samples\..\Include;C:\VulkanSDK\1.2.141.2\Samples\API-Samples\data;C:\VulkanSDK\1.2.141.2\Samples\build\API-Samples\ShaderHeaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.141.2\Lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>C:\VulkanSDK\1.2.141.2\Lib\vulkan-1.lib;C:\VulkanSDK\1.2.141.2\Lib\glslang.lib;C:\VulkanSDK\1.2.141.2\Lib\hlsl.lib;C:\VulkanSDK\1.2.141.2\Lib\OGLCompiler.lib;C:\VulkanSDK\1.2.141.2\Lib\OSDependent.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-cross-glsl.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-tools.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-tools-link.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-tools-opt.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-tools-reduce.lib;C:\VulkanSDK\1.2.141.2\Lib\spirv-tools-shared.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
