@@ -366,26 +366,51 @@ static const char *vertShaderText =
 "#version 400\n"
 "#extension GL_ARB_separate_shader_objects : enable\n"
 "#extension GL_ARB_shading_language_420pack : enable\n"
-"layout (std140, binding = 0) uniform bufferVals {\n"
-"    mat4 mvp;\n"
-"} myBufferVals;\n"
-"layout (location = 0) in vec4 pos;\n"
-"layout (location = 1) in vec4 inColor;\n"
-"layout (location = 0) out vec4 outColor;\n"
-"void main() {\n"
-"   outColor = inColor;\n"
-"   gl_Position = myBufferVals.mvp * pos;\n"
-"}\n";
+"layout (std140, binding = 0) uniform buf {"
+"    mat4 mvp;"
+"} ubuf;"
+"layout (location = 0) in vec4 pos;"
+"layout (location = 1) in vec2 inTexCoords;"
+"layout (location = 0) out vec2 texcoord;"
+"void main() {"
+"   texcoord = inTexCoords;"
+"   gl_Position = ubuf.mvp * pos;"
+"}"
+//
+//"#version 400\n"
+//"#extension GL_ARB_separate_shader_objects : enable\n"
+//"#extension GL_ARB_shading_language_420pack : enable\n"
+//"layout (std140, binding = 0) uniform bufferVals {\n"
+//"    mat4 mvp;\n"
+//"} myBufferVals;\n"
+//"layout (location = 0) in vec4 pos;\n"
+//"layout (location = 1) in vec4 inColor;\n"
+//"layout (location = 0) out vec4 outColor;\n"
+//"void main() {\n"
+//"   outColor = inColor;\n"
+//"   gl_Position = myBufferVals.mvp * pos;\n"
+//"}\n"
+;
 
 static const char *fragShaderText =
 "#version 400\n"
 "#extension GL_ARB_separate_shader_objects : enable\n"
 "#extension GL_ARB_shading_language_420pack : enable\n"
-"layout (location = 0) in vec4 color;\n"
-"layout (location = 0) out vec4 outColor;\n"
-"void main() {\n"
-"   outColor = color;\n"
-"}\n";
+"layout (binding = 1) uniform sampler2D tex;"
+"layout (location = 0) in vec2 texcoord;"
+"layout (location = 0) out vec4 outColor;"
+"void main() {"
+"   outColor = textureLod(tex, texcoord, 0.0);"
+"}"
+//"#version 400\n"
+//"#extension GL_ARB_separate_shader_objects : enable\n"
+//"#extension GL_ARB_shading_language_420pack : enable\n"
+//"layout (location = 0) in vec4 color;\n"
+//"layout (location = 0) out vec4 outColor;\n"
+//"void main() {\n"
+//"   outColor = color;\n"
+//"}\n"
+;
 
 void Application::initialize()
 {
@@ -417,7 +442,7 @@ void Application::initialize()
     }
 
     init_depth_buffer(info);
-    //init_texture(info);
+    init_texture(info);
     init_uniform_buffer(info);
     init_descriptor_and_pipeline_layouts(info, true);
     init_renderpass(info, depthPresent);
@@ -432,8 +457,8 @@ void Application::initialize()
     init_shaders(info, vertShaderText, fragShaderText);
     init_framebuffers(info, depthPresent);
     init_vertex_buffer(info, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), true);
-    init_descriptor_pool(info, false);
-    init_descriptor_set(info, false);
+    init_descriptor_pool(info, true);
+    init_descriptor_set(info, true);
     init_pipeline_cache(info);
     init_pipeline(info, depthPresent);
     //init_presentable_image(info);
@@ -619,7 +644,7 @@ void Application::updateTexture()
         return;
     }
 
-    init_texture(info);
+    //init_texture(info);
     initialized = true;
 }
 
