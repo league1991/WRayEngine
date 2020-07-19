@@ -1991,242 +1991,436 @@ void init_buffer(struct sample_info& info, texture_object& texObj) {
     assert(res == VK_SUCCESS);
 }
 
-//void init_image(struct sample_info& info, texture_object& texObj, const char* textureName, VkImageUsageFlags extraUsages,
-//    VkFormatFeatureFlags extraFeatures) {
-//    VkResult U_ASSERT_ONLY res;
-//    bool U_ASSERT_ONLY pass;
-//    std::string filename = get_base_data_dir();
-//
-//    if (textureName == nullptr)
-//        filename.append("lunarg.ppm");
-//    else
-//        filename.append(textureName);
-//
-//    if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height, 0, NULL)) {
-//        std::cout << "Try relative path\n";
-//        filename = "../../API-Samples/data/";
-//        if (textureName == nullptr)
-//            filename.append("lunarg.ppm");
-//        else
-//            filename.append(textureName);
-//        if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height, 0, NULL)) {
-//            std::cout << "Could not read texture file " << filename;
-//            exit(-1);
-//        }
-//    }
-//
-//    VkFormatProperties formatProps;
-//    vkGetPhysicalDeviceFormatProperties(info.gpus[0], VK_FORMAT_R8G8B8A8_UNORM, &formatProps);
-//
-//    /* See if we can use a linear tiled image for a texture, if not, we will
-//     * need a staging buffer for the texture data */
-//    VkFormatFeatureFlags allFeatures = (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | extraFeatures);
-//    texObj.needs_staging = ((formatProps.linearTilingFeatures & allFeatures) != allFeatures);
-//
-//    if (texObj.needs_staging) {
-//        assert((formatProps.optimalTilingFeatures & allFeatures) == allFeatures);
-//        init_buffer(info, texObj);
-//        extraUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-//    }
-//    else {
-//        texObj.buffer = VK_NULL_HANDLE;
-//        texObj.buffer_memory = VK_NULL_HANDLE;
-//    }
-//
-//    VkImageCreateInfo image_create_info = {};
-//    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-//    image_create_info.pNext = NULL;
-//    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-//    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-//    image_create_info.extent.width = texObj.tex_width;
-//    image_create_info.extent.height = texObj.tex_height;
-//    image_create_info.extent.depth = 1;
-//    image_create_info.mipLevels = 1;
-//    image_create_info.arrayLayers = 1;
-//    image_create_info.samples = NUM_SAMPLES;
-//    image_create_info.tiling = texObj.needs_staging ? VK_IMAGE_TILING_OPTIMAL : VK_IMAGE_TILING_LINEAR;
-//    image_create_info.initialLayout = texObj.needs_staging ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
-//    image_create_info.usage = (VK_IMAGE_USAGE_SAMPLED_BIT | extraUsages);
-//    image_create_info.queueFamilyIndexCount = 0;
-//    image_create_info.pQueueFamilyIndices = NULL;
-//    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-//    image_create_info.flags = 0;
-//
-//    VkMemoryAllocateInfo mem_alloc = {};
-//    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-//    mem_alloc.pNext = NULL;
-//    mem_alloc.allocationSize = 0;
-//    mem_alloc.memoryTypeIndex = 0;
-//
-//    VkMemoryRequirements mem_reqs;
-//
-//    res = vkCreateImage(info.device, &image_create_info, NULL, &texObj.image);
-//    assert(res == VK_SUCCESS);
-//
-//    vkGetImageMemoryRequirements(info.device, texObj.image, &mem_reqs);
-//
-//    mem_alloc.allocationSize = mem_reqs.size;
-//
-//    VkFlags requirements = texObj.needs_staging ? 0 : (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-//    pass = memory_type_from_properties(info, mem_reqs.memoryTypeBits, requirements, &mem_alloc.memoryTypeIndex);
-//    assert(pass);
-//
-//    /* allocate memory */
-//    res = vkAllocateMemory(info.device, &mem_alloc, NULL, &(texObj.image_memory));
-//    assert(res == VK_SUCCESS);
-//
-//    /* bind memory */
-//    res = vkBindImageMemory(info.device, texObj.image, texObj.image_memory, 0);
-//    assert(res == VK_SUCCESS);
-//
-//    res = vkEndCommandBuffer(info.cmd);
-//    assert(res == VK_SUCCESS);
-//    const VkCommandBuffer cmd_bufs[] = { info.cmd };
-//    VkFenceCreateInfo fenceInfo;
-//    VkFence cmdFence;
-//    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-//    fenceInfo.pNext = NULL;
-//    fenceInfo.flags = 0;
-//    vkCreateFence(info.device, &fenceInfo, NULL, &cmdFence);
-//
-//    VkSubmitInfo submit_info[1] = {};
-//    submit_info[0].pNext = NULL;
-//    submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-//    submit_info[0].waitSemaphoreCount = 0;
-//    submit_info[0].pWaitSemaphores = NULL;
-//    submit_info[0].pWaitDstStageMask = NULL;
-//    submit_info[0].commandBufferCount = 1;
-//    submit_info[0].pCommandBuffers = cmd_bufs;
-//    submit_info[0].signalSemaphoreCount = 0;
-//    submit_info[0].pSignalSemaphores = NULL;
-//
-//    /* Queue the command buffer for execution */
-//    res = vkQueueSubmit(info.graphics_queue, 1, submit_info, cmdFence);
-//    assert(res == VK_SUCCESS);
-//
-//    VkImageSubresource subres = {};
-//    subres.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//    subres.mipLevel = 0;
-//    subres.arrayLayer = 0;
-//
-//    VkSubresourceLayout layout = {};
-//    void* data;
-//    if (!texObj.needs_staging) {
-//        /* Get the subresource layout so we know what the row pitch is */
-//        vkGetImageSubresourceLayout(info.device, texObj.image, &subres, &layout);
-//    }
-//
-//    /* Make sure command buffer is finished before mapping */
-//    do {
-//        res = vkWaitForFences(info.device, 1, &cmdFence, VK_TRUE, FENCE_TIMEOUT);
-//    } while (res == VK_TIMEOUT);
-//    assert(res == VK_SUCCESS);
-//
-//    vkDestroyFence(info.device, cmdFence, NULL);
-//
-//    if (texObj.needs_staging) {
-//        res = vkMapMemory(info.device, texObj.buffer_memory, 0, texObj.buffer_size, 0, &data);
-//    }
-//    else {
-//        res = vkMapMemory(info.device, texObj.image_memory, 0, mem_reqs.size, 0, &data);
-//    }
-//    assert(res == VK_SUCCESS);
-//
-//    /* Read the ppm file into the mappable image's memory */
-//    if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height,
-//        texObj.needs_staging ? (texObj.tex_width * 4) : layout.rowPitch, (unsigned char*)data)) {
-//        std::cout << "Could not load texture file lunarg.ppm\n";
-//        exit(-1);
-//    }
-//
-//    vkUnmapMemory(info.device, texObj.needs_staging ? texObj.buffer_memory : texObj.image_memory);
-//
-//    VkCommandBufferBeginInfo cmd_buf_info = {};
-//    cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//    cmd_buf_info.pNext = NULL;
-//    cmd_buf_info.flags = 0;
-//    cmd_buf_info.pInheritanceInfo = NULL;
-//
-//    res = vkResetCommandBuffer(info.cmd, 0);
-//    res = vkBeginCommandBuffer(info.cmd, &cmd_buf_info);
-//    assert(res == VK_SUCCESS);
-//
-//    if (!texObj.needs_staging) {
-//        /* If we can use the linear tiled image as a texture, just do it */
-//        texObj.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED, texObj.imageLayout,
-//            VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-//    }
-//    else {
-//        /* Since we're going to blit to the texture image, set its layout to
-//         * DESTINATION_OPTIMAL */
-//        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-//            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-//
-//        VkBufferImageCopy copy_region;
-//        copy_region.bufferOffset = 0;
-//        copy_region.bufferRowLength = texObj.tex_width;
-//        copy_region.bufferImageHeight = texObj.tex_height;
-//        copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//        copy_region.imageSubresource.mipLevel = 0;
-//        copy_region.imageSubresource.baseArrayLayer = 0;
-//        copy_region.imageSubresource.layerCount = 1;
-//        copy_region.imageOffset.x = 0;
-//        copy_region.imageOffset.y = 0;
-//        copy_region.imageOffset.z = 0;
-//        copy_region.imageExtent.width = texObj.tex_width;
-//        copy_region.imageExtent.height = texObj.tex_height;
-//        copy_region.imageExtent.depth = 1;
-//
-//        /* Put the copy command into the command buffer */
-//        vkCmdCopyBufferToImage(info.cmd, texObj.buffer, texObj.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-//
-//        /* Set the layout for the texture image from DESTINATION_OPTIMAL to
-//         * SHADER_READ_ONLY */
-//        texObj.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texObj.imageLayout,
-//            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-//    }
-//
-//    VkImageViewCreateInfo view_info = {};
-//    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-//    view_info.pNext = NULL;
-//    view_info.image = VK_NULL_HANDLE;
-//    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-//    view_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-//    view_info.components.r = VK_COMPONENT_SWIZZLE_R;
-//    view_info.components.g = VK_COMPONENT_SWIZZLE_G;
-//    view_info.components.b = VK_COMPONENT_SWIZZLE_B;
-//    view_info.components.a = VK_COMPONENT_SWIZZLE_A;
-//    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//    view_info.subresourceRange.baseMipLevel = 0;
-//    view_info.subresourceRange.levelCount = 1;
-//    view_info.subresourceRange.baseArrayLayer = 0;
-//    view_info.subresourceRange.layerCount = 1;
-//
-//    /* create image view */
-//    view_info.image = texObj.image;
-//    res = vkCreateImageView(info.device, &view_info, NULL, &texObj.view);
-//    assert(res == VK_SUCCESS);
-//}
-//
-//void init_texture(struct sample_info& info, const char* textureName, VkImageUsageFlags extraUsages,
-//    VkFormatFeatureFlags extraFeatures) {
-//    struct texture_object texObj;
-//
-//    /* create image */
-//    init_image(info, texObj, textureName, extraUsages, extraFeatures);
-//
-//    /* create sampler */
-//    init_sampler(info, texObj.sampler);
-//
-//    info.textures.push_back(texObj);
-//
-//    /* track a description of the texture */
-//    info.texture_data.image_info.imageView = info.textures.back().view;
-//    info.texture_data.image_info.sampler = info.textures.back().sampler;
-//    info.texture_data.image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//}
+#if !defined(VK_USE_PLATFORM_METAL_EXT)
+// iOS & macOS: get_base_data_dir() implemented externally to allow access to Objective-C components
+std::string get_base_data_dir() {
+#ifdef __ANDROID__
+    return "";
+#else
+    return std::string(VULKAN_SAMPLES_BASE_DIR) + "/API-Samples/data/";
+#endif
+}
+#endif
+
+
+string get_file_name(const string& s) {
+    char sep = '/';
+
+#ifdef _WIN32
+    sep = '\\';
+#endif
+
+    // cout << "in get_file_name\n";
+    size_t i = s.rfind(sep, s.length());
+    if (i != string::npos) {
+        return (s.substr(i + 1, s.length() - i));
+    }
+
+    return ("");
+}
+
+std::string get_data_dir(std::string filename) {
+    std::string basedir = get_base_data_dir();
+    // get the base filename
+    std::string fname = get_file_name(filename);
+
+    // get the prefix of the base filename, i.e. the part before the dash
+    stringstream stream(fname);
+    std::string prefix;
+    getline(stream, prefix, '-');
+    std::string ddir = basedir + prefix;
+    return ddir;
+}
+
+
+void set_image_layout(struct sample_info& info, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout old_image_layout,
+    VkImageLayout new_image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
+    /* DEPENDS on info.cmd and info.queue initialized */
+
+    //assert(info.cmd != VK_NULL_HANDLE);
+    assert(info.graphics_queue != VK_NULL_HANDLE);
+
+    VkImageMemoryBarrier image_memory_barrier = {};
+    image_memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_memory_barrier.pNext = NULL;
+    image_memory_barrier.srcAccessMask = 0;
+    image_memory_barrier.dstAccessMask = 0;
+    image_memory_barrier.oldLayout = old_image_layout;
+    image_memory_barrier.newLayout = new_image_layout;
+    image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_memory_barrier.image = image;
+    image_memory_barrier.subresourceRange.aspectMask = aspectMask;
+    image_memory_barrier.subresourceRange.baseMipLevel = 0;
+    image_memory_barrier.subresourceRange.levelCount = 1;
+    image_memory_barrier.subresourceRange.baseArrayLayer = 0;
+    image_memory_barrier.subresourceRange.layerCount = 1;
+
+    switch (old_image_layout) {
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        image_memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        image_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_PREINITIALIZED:
+        image_memory_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+        break;
+
+    default:
+        break;
+    }
+
+    switch (new_image_layout) {
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+        image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        break;
+
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        image_memory_barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        break;
+
+    default:
+        break;
+    }
+
+    VkCommandBuffer cmd = info.per_frame[info.current_buffer].primary_command_buffer;
+    vkCmdPipelineBarrier(cmd, src_stages, dest_stages, 0, 0, NULL, 0, NULL, 1, &image_memory_barrier);
+}
+
+
+
+bool read_ppm(char const* const filename, int& width, int& height, uint64_t rowPitch, unsigned char* dataPtr) {
+    // PPM format expected from http://netpbm.sourceforge.net/doc/ppm.html
+    //  1. magic number
+    //  2. whitespace
+    //  3. width
+    //  4. whitespace
+    //  5. height
+    //  6. whitespace
+    //  7. max color value
+    //  8. whitespace
+    //  7. data
+
+    // Comments are not supported, but are detected and we kick out
+    // Only 8 bits per channel is supported
+    // If dataPtr is nullptr, only width and height are returned
+
+    // Read in values from the PPM file as characters to check for comments
+    char magicStr[3] = {}, heightStr[6] = {}, widthStr[6] = {}, formatStr[6] = {};
+
+#ifndef __ANDROID__
+    FILE* fPtr = fopen(filename, "rb");
+#else
+    FILE* fPtr = AndroidFopen(filename, "rb");
+#endif
+    if (!fPtr) {
+        printf("Bad filename in read_ppm: %s\n", filename);
+        return false;
+    }
+
+    // Read the four values from file, accounting with any and all whitepace
+    int U_ASSERT_ONLY count = fscanf(fPtr, "%s %s %s %s ", magicStr, widthStr, heightStr, formatStr);
+    assert(count == 4);
+
+    // Kick out if comments present
+    if (magicStr[0] == '#' || widthStr[0] == '#' || heightStr[0] == '#' || formatStr[0] == '#') {
+        printf("Unhandled comment in PPM file\n");
+        return false;
+    }
+
+    // Only one magic value is valid
+    if (strncmp(magicStr, "P6", sizeof(magicStr))) {
+        printf("Unhandled PPM magic number: %s\n", magicStr);
+        return false;
+    }
+
+    width = atoi(widthStr);
+    height = atoi(heightStr);
+
+    // Ensure we got something sane for width/height
+    static const int saneDimension = 32768;  //??
+    if (width <= 0 || width > saneDimension) {
+        printf("Width seems wrong.  Update read_ppm if not: %u\n", width);
+        return false;
+    }
+    if (height <= 0 || height > saneDimension) {
+        printf("Height seems wrong.  Update read_ppm if not: %u\n", height);
+        return false;
+    }
+
+    if (dataPtr == nullptr) {
+        // If no destination pointer, caller only wanted dimensions
+        return true;
+    }
+
+    // Now read the data
+    for (int y = 0; y < height; y++) {
+        unsigned char* rowPtr = dataPtr;
+        for (int x = 0; x < width; x++) {
+            count = fread(rowPtr, 3, 1, fPtr);
+            assert(count == 1);
+            rowPtr[3] = 255; /* Alpha of 1 */
+            rowPtr += 4;
+        }
+        dataPtr += rowPitch;
+    }
+    fclose(fPtr);
+
+    return true;
+}
+
+void init_image(struct sample_info& info, texture_object& texObj, const char* textureName, VkImageUsageFlags extraUsages,
+    VkFormatFeatureFlags extraFeatures) {
+    VkResult U_ASSERT_ONLY res;
+    bool U_ASSERT_ONLY pass;
+    std::string filename = get_base_data_dir();
+
+    if (textureName == nullptr)
+        filename.append("lunarg.ppm");
+    else
+        filename.append(textureName);
+
+    if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height, 0, NULL)) {
+        std::cout << "Try relative path\n";
+        filename = "../../API-Samples/data/";
+        if (textureName == nullptr)
+            filename.append("lunarg.ppm");
+        else
+            filename.append(textureName);
+        if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height, 0, NULL)) {
+            std::cout << "Could not read texture file " << filename;
+            exit(-1);
+        }
+    }
+
+    VkFormatProperties formatProps;
+    vkGetPhysicalDeviceFormatProperties(info.gpus[0], VK_FORMAT_R8G8B8A8_UNORM, &formatProps);
+
+    /* See if we can use a linear tiled image for a texture, if not, we will
+     * need a staging buffer for the texture data */
+    VkFormatFeatureFlags allFeatures = (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | extraFeatures);
+    texObj.needs_staging = ((formatProps.linearTilingFeatures & allFeatures) != allFeatures);
+
+    if (texObj.needs_staging) {
+        assert((formatProps.optimalTilingFeatures & allFeatures) == allFeatures);
+        init_buffer(info, texObj);
+        extraUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    else {
+        texObj.buffer = VK_NULL_HANDLE;
+        texObj.buffer_memory = VK_NULL_HANDLE;
+    }
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = texObj.tex_width;
+    image_create_info.extent.height = texObj.tex_height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = NUM_SAMPLES;
+    image_create_info.tiling = texObj.needs_staging ? VK_IMAGE_TILING_OPTIMAL : VK_IMAGE_TILING_LINEAR;
+    image_create_info.initialLayout = texObj.needs_staging ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = (VK_IMAGE_USAGE_SAMPLED_BIT | extraUsages);
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.flags = 0;
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = NULL;
+    mem_alloc.allocationSize = 0;
+    mem_alloc.memoryTypeIndex = 0;
+
+    VkMemoryRequirements mem_reqs;
+
+    res = vkCreateImage(info.device, &image_create_info, NULL, &texObj.image);
+    assert(res == VK_SUCCESS);
+
+    vkGetImageMemoryRequirements(info.device, texObj.image, &mem_reqs);
+
+    mem_alloc.allocationSize = mem_reqs.size;
+
+    VkFlags requirements = texObj.needs_staging ? 0 : (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pass = memory_type_from_properties(info, mem_reqs.memoryTypeBits, requirements, &mem_alloc.memoryTypeIndex);
+    assert(pass);
+
+    /* allocate memory */
+    res = vkAllocateMemory(info.device, &mem_alloc, NULL, &(texObj.image_memory));
+    assert(res == VK_SUCCESS);
+
+    /* bind memory */
+    res = vkBindImageMemory(info.device, texObj.image, texObj.image_memory, 0);
+    assert(res == VK_SUCCESS);
+
+    VkCommandBuffer cmd = info.per_frame[info.current_buffer].primary_command_buffer;
+    res = vkEndCommandBuffer(cmd);
+    assert(res == VK_SUCCESS);
+    const VkCommandBuffer cmd_bufs[] = { cmd };
+    VkFenceCreateInfo fenceInfo;
+    VkFence cmdFence;
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.pNext = NULL;
+    fenceInfo.flags = 0;
+    vkCreateFence(info.device, &fenceInfo, NULL, &cmdFence);
+
+    VkSubmitInfo submit_info[1] = {};
+    submit_info[0].pNext = NULL;
+    submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[0].waitSemaphoreCount = 0;
+    submit_info[0].pWaitSemaphores = NULL;
+    submit_info[0].pWaitDstStageMask = NULL;
+    submit_info[0].commandBufferCount = 1;
+    submit_info[0].pCommandBuffers = cmd_bufs;
+    submit_info[0].signalSemaphoreCount = 0;
+    submit_info[0].pSignalSemaphores = NULL;
+
+    /* Queue the command buffer for execution */
+    res = vkQueueSubmit(info.graphics_queue, 1, submit_info, cmdFence);
+    assert(res == VK_SUCCESS);
+
+    VkImageSubresource subres = {};
+    subres.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subres.mipLevel = 0;
+    subres.arrayLayer = 0;
+
+    VkSubresourceLayout layout = {};
+    void* data;
+    if (!texObj.needs_staging) {
+        /* Get the subresource layout so we know what the row pitch is */
+        vkGetImageSubresourceLayout(info.device, texObj.image, &subres, &layout);
+    }
+
+    /* Make sure command buffer is finished before mapping */
+    do {
+        res = vkWaitForFences(info.device, 1, &cmdFence, VK_TRUE, FENCE_TIMEOUT);
+    } while (res == VK_TIMEOUT);
+    assert(res == VK_SUCCESS);
+
+    vkDestroyFence(info.device, cmdFence, NULL);
+
+    if (texObj.needs_staging) {
+        res = vkMapMemory(info.device, texObj.buffer_memory, 0, texObj.buffer_size, 0, &data);
+    }
+    else {
+        res = vkMapMemory(info.device, texObj.image_memory, 0, mem_reqs.size, 0, &data);
+    }
+    assert(res == VK_SUCCESS);
+
+    /* Read the ppm file into the mappable image's memory */
+    if (!read_ppm(filename.c_str(), texObj.tex_width, texObj.tex_height,
+        texObj.needs_staging ? (texObj.tex_width * 4) : layout.rowPitch, (unsigned char*)data)) {
+        std::cout << "Could not load texture file lunarg.ppm\n";
+        exit(-1);
+    }
+
+    vkUnmapMemory(info.device, texObj.needs_staging ? texObj.buffer_memory : texObj.image_memory);
+
+    VkCommandBufferBeginInfo cmd_buf_info = {};
+    cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmd_buf_info.pNext = NULL;
+    cmd_buf_info.flags = 0;
+    cmd_buf_info.pInheritanceInfo = NULL;
+
+    res = vkResetCommandBuffer(cmd, 0);
+    res = vkBeginCommandBuffer(cmd, &cmd_buf_info);
+    assert(res == VK_SUCCESS);
+
+    if (!texObj.needs_staging) {
+        /* If we can use the linear tiled image as a texture, just do it */
+        texObj.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED, texObj.imageLayout,
+            VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    }
+    else {
+        /* Since we're going to blit to the texture image, set its layout to
+         * DESTINATION_OPTIMAL */
+        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+        VkBufferImageCopy copy_region;
+        copy_region.bufferOffset = 0;
+        copy_region.bufferRowLength = texObj.tex_width;
+        copy_region.bufferImageHeight = texObj.tex_height;
+        copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_region.imageSubresource.mipLevel = 0;
+        copy_region.imageSubresource.baseArrayLayer = 0;
+        copy_region.imageSubresource.layerCount = 1;
+        copy_region.imageOffset.x = 0;
+        copy_region.imageOffset.y = 0;
+        copy_region.imageOffset.z = 0;
+        copy_region.imageExtent.width = texObj.tex_width;
+        copy_region.imageExtent.height = texObj.tex_height;
+        copy_region.imageExtent.depth = 1;
+
+        /* Put the copy command into the command buffer */
+        vkCmdCopyBufferToImage(cmd, texObj.buffer, texObj.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+        /* Set the layout for the texture image from DESTINATION_OPTIMAL to
+         * SHADER_READ_ONLY */
+        texObj.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        set_image_layout(info, texObj.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texObj.imageLayout,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    }
+
+    VkImageViewCreateInfo view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.pNext = NULL;
+    view_info.image = VK_NULL_HANDLE;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+    view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+    view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+    view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = 1;
+
+    /* create image view */
+    view_info.image = texObj.image;
+    res = vkCreateImageView(info.device, &view_info, NULL, &texObj.view);
+    assert(res == VK_SUCCESS);
+}
+
+void init_texture(struct sample_info& info, const char* textureName, VkImageUsageFlags extraUsages,
+    VkFormatFeatureFlags extraFeatures) {
+    struct texture_object texObj;
+
+    /* create image */
+    init_image(info, texObj, textureName, extraUsages, extraFeatures);
+
+    /* create sampler */
+    init_sampler(info, texObj.sampler);
+
+    info.textures.push_back(texObj);
+
+    /* track a description of the texture */
+    info.texture_data.image_info.imageView = info.textures.back().view;
+    info.texture_data.image_info.sampler = info.textures.back().sampler;
+    info.texture_data.image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
 
 //void init_viewports(struct sample_info& info) {
 //#ifdef __ANDROID__
@@ -2400,194 +2594,6 @@ void extract_version(uint32_t version, uint32_t& major, uint32_t& minor, uint32_
     patch = version & 0xfff;
 }
 
-string get_file_name(const string& s) {
-    char sep = '/';
-
-#ifdef _WIN32
-    sep = '\\';
-#endif
-
-    // cout << "in get_file_name\n";
-    size_t i = s.rfind(sep, s.length());
-    if (i != string::npos) {
-        return (s.substr(i + 1, s.length() - i));
-    }
-
-    return ("");
-}
-
-#if !defined(VK_USE_PLATFORM_METAL_EXT)
-// iOS & macOS: get_base_data_dir() implemented externally to allow access to Objective-C components
-std::string get_base_data_dir() {
-#ifdef __ANDROID__
-    return "";
-#else
-    return std::string(VULKAN_SAMPLES_BASE_DIR) + "/API-Samples/data/";
-#endif
-}
-#endif
-
-std::string get_data_dir(std::string filename) {
-    std::string basedir = get_base_data_dir();
-    // get the base filename
-    std::string fname = get_file_name(filename);
-
-    // get the prefix of the base filename, i.e. the part before the dash
-    stringstream stream(fname);
-    std::string prefix;
-    getline(stream, prefix, '-');
-    std::string ddir = basedir + prefix;
-    return ddir;
-}
-
-
-//void set_image_layout(struct sample_info& info, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout old_image_layout,
-//    VkImageLayout new_image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
-//    /* DEPENDS on info.cmd and info.queue initialized */
-//
-//    //assert(info.cmd != VK_NULL_HANDLE);
-//    assert(info.graphics_queue != VK_NULL_HANDLE);
-//
-//    VkImageMemoryBarrier image_memory_barrier = {};
-//    image_memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-//    image_memory_barrier.pNext = NULL;
-//    image_memory_barrier.srcAccessMask = 0;
-//    image_memory_barrier.dstAccessMask = 0;
-//    image_memory_barrier.oldLayout = old_image_layout;
-//    image_memory_barrier.newLayout = new_image_layout;
-//    image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//    image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//    image_memory_barrier.image = image;
-//    image_memory_barrier.subresourceRange.aspectMask = aspectMask;
-//    image_memory_barrier.subresourceRange.baseMipLevel = 0;
-//    image_memory_barrier.subresourceRange.levelCount = 1;
-//    image_memory_barrier.subresourceRange.baseArrayLayer = 0;
-//    image_memory_barrier.subresourceRange.layerCount = 1;
-//
-//    switch (old_image_layout) {
-//    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-//        image_memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-//        image_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_PREINITIALIZED:
-//        image_memory_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-//        break;
-//
-//    default:
-//        break;
-//    }
-//
-//    switch (new_image_layout) {
-//    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-//        image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-//        image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-//        image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-//        image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-//        break;
-//
-//    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-//        image_memory_barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-//        break;
-//
-//    default:
-//        break;
-//    }
-//
-//    vkCmdPipelineBarrier(info.cmd, src_stages, dest_stages, 0, 0, NULL, 0, NULL, 1, &image_memory_barrier);
-//}
-
-bool read_ppm(char const* const filename, int& width, int& height, uint64_t rowPitch, unsigned char* dataPtr) {
-    // PPM format expected from http://netpbm.sourceforge.net/doc/ppm.html
-    //  1. magic number
-    //  2. whitespace
-    //  3. width
-    //  4. whitespace
-    //  5. height
-    //  6. whitespace
-    //  7. max color value
-    //  8. whitespace
-    //  7. data
-
-    // Comments are not supported, but are detected and we kick out
-    // Only 8 bits per channel is supported
-    // If dataPtr is nullptr, only width and height are returned
-
-    // Read in values from the PPM file as characters to check for comments
-    char magicStr[3] = {}, heightStr[6] = {}, widthStr[6] = {}, formatStr[6] = {};
-
-#ifndef __ANDROID__
-    FILE* fPtr = fopen(filename, "rb");
-#else
-    FILE* fPtr = AndroidFopen(filename, "rb");
-#endif
-    if (!fPtr) {
-        printf("Bad filename in read_ppm: %s\n", filename);
-        return false;
-    }
-
-    // Read the four values from file, accounting with any and all whitepace
-    int U_ASSERT_ONLY count = fscanf(fPtr, "%s %s %s %s ", magicStr, widthStr, heightStr, formatStr);
-    assert(count == 4);
-
-    // Kick out if comments present
-    if (magicStr[0] == '#' || widthStr[0] == '#' || heightStr[0] == '#' || formatStr[0] == '#') {
-        printf("Unhandled comment in PPM file\n");
-        return false;
-    }
-
-    // Only one magic value is valid
-    if (strncmp(magicStr, "P6", sizeof(magicStr))) {
-        printf("Unhandled PPM magic number: %s\n", magicStr);
-        return false;
-    }
-
-    width = atoi(widthStr);
-    height = atoi(heightStr);
-
-    // Ensure we got something sane for width/height
-    static const int saneDimension = 32768;  //??
-    if (width <= 0 || width > saneDimension) {
-        printf("Width seems wrong.  Update read_ppm if not: %u\n", width);
-        return false;
-    }
-    if (height <= 0 || height > saneDimension) {
-        printf("Height seems wrong.  Update read_ppm if not: %u\n", height);
-        return false;
-    }
-
-    if (dataPtr == nullptr) {
-        // If no destination pointer, caller only wanted dimensions
-        return true;
-    }
-
-    // Now read the data
-    for (int y = 0; y < height; y++) {
-        unsigned char* rowPtr = dataPtr;
-        for (int x = 0; x < width; x++) {
-            count = fread(rowPtr, 3, 1, fPtr);
-            assert(count == 1);
-            rowPtr[3] = 255; /* Alpha of 1 */
-            rowPtr += 4;
-        }
-        dataPtr += rowPitch;
-    }
-    fclose(fPtr);
-
-    return true;
-}
 
 
 //void write_ppm(struct sample_info& info, const char* basename) {

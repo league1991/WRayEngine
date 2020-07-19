@@ -3,8 +3,6 @@
 
 
 
-/* Amount of time, in nanoseconds, to wait for a command buffer to complete */
-#define FENCE_TIMEOUT 100000000*100
 
 Application::~Application() {  }
 
@@ -412,10 +410,10 @@ void Application::initialize()
     init_device_queue(info);
     init_swap_chain(info);
 
-    per_frame.resize(info.swapchainImageCount);
+    info.per_frame.resize(info.swapchainImageCount);
     for (int i = 0; i < info.swapchainImageCount; i++)
     {
-        init_per_frame(info, per_frame[i]);
+        init_per_frame(info, info.per_frame[i]);
     }
 
     init_depth_buffer(info);
@@ -571,26 +569,26 @@ void Application::acquireSemaphore()
     // waiting for all GPU work to complete before this returns.
     // Normally, this doesn't really block at all,
     // since we're waiting for old frames to have been completed, but just in case.
-    if (per_frame[info.current_buffer].queue_submit_fence != VK_NULL_HANDLE)
+    if (info.per_frame[info.current_buffer].queue_submit_fence != VK_NULL_HANDLE)
     {
-        vkWaitForFences(info.device, 1, &per_frame[info.current_buffer].queue_submit_fence, true, UINT64_MAX);
-        vkResetFences(info.device, 1, &per_frame[info.current_buffer].queue_submit_fence);
+        vkWaitForFences(info.device, 1, &info.per_frame[info.current_buffer].queue_submit_fence, true, UINT64_MAX);
+        vkResetFences(info.device, 1, &info.per_frame[info.current_buffer].queue_submit_fence);
     }
 
-    if (per_frame[info.current_buffer].primary_command_pool != VK_NULL_HANDLE)
+    if (info.per_frame[info.current_buffer].primary_command_pool != VK_NULL_HANDLE)
     {
-        vkResetCommandPool(info.device, per_frame[info.current_buffer].primary_command_pool, 0);
+        vkResetCommandPool(info.device, info.per_frame[info.current_buffer].primary_command_pool, 0);
     }
 
     // Recycle the old semaphore back into the semaphore manager.
-    VkSemaphore old_semaphore = per_frame[info.current_buffer].swapchain_acquire_semaphore;
+    VkSemaphore old_semaphore = info.per_frame[info.current_buffer].swapchain_acquire_semaphore;
 
     if (old_semaphore != VK_NULL_HANDLE)
     {
         recycled_semaphores.push_back(old_semaphore);
     }
 
-    per_frame[info.current_buffer].swapchain_acquire_semaphore = acquire_semaphore;
+    info.per_frame[info.current_buffer].swapchain_acquire_semaphore = acquire_semaphore;
 
     //return VK_SUCCESS;
 }
@@ -613,8 +611,21 @@ void Application::updateCPUData()
     info.MVP = info.Clip * info.Projection * info.View * info.Model;
 }
 
+void Application::updateTexture()
+{
+    static bool initialized = false;
+    if (initialized)
+    {
+        return;
+    }
+
+    init_texture(info);
+    initialized = true;
+}
+
 void Application::render()
 {
+    updateTexture();
     updateCPUData();
 
     // update uniform buffer
@@ -623,14 +634,23 @@ void Application::render()
         VkResult res = vkMapMemory(info.device, info.uniform_data.mem, 0, info.uniform_data.buffer_info.range, 0, (void**)&pData);
         assert(res == VK_SUCCESS);
         memcpy(pData, &info.MVP, sizeof(info.MVP));
-        vkUnmapMemory(info.device, info.uniform_data.mem);
+
+        //vkUnmapMemory(info.device, info.uniform_data.mem);
+        VkMappedMemoryRange range;
+        range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        range.offset = 0;
+        range.pNext = NULL;
+        range.size = info.uniform_data.buffer_info.range;
+        range.memory = info.uniform_data.mem;
+        vkInvalidateMappedMemoryRanges(info.device, 1, &range);
+        vkFlushMappedMemoryRanges(info.device, 1, &range);
     }
 
     // Render to this framebuffer.
     VkFramebuffer framebuffer = info.framebuffers[info.current_buffer];
 
     // Allocate or re-use a primary command buffer.
-    VkCommandBuffer cmd = per_frame[info.current_buffer].primary_command_buffer;
+    VkCommandBuffer cmd = info.per_frame[info.current_buffer].primary_command_buffer;
 
     // We will only submit this once before it's recycled.
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
@@ -693,14 +713,14 @@ void Application::render()
 
 void Application::present()
 {
-    VkCommandBuffer cmd = per_frame[info.current_buffer].primary_command_buffer;
+    VkCommandBuffer cmd = info.per_frame[info.current_buffer].primary_command_buffer;
 
     // Submit it to the queue with a release semaphore.
-    if (per_frame[info.current_buffer].swapchain_release_semaphore == VK_NULL_HANDLE)
+    if (info.per_frame[info.current_buffer].swapchain_release_semaphore == VK_NULL_HANDLE)
     {
         VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
         VK_CHECK(vkCreateSemaphore(info.device, &semaphore_info, nullptr,
-            &per_frame[info.current_buffer].swapchain_release_semaphore));
+            &info.per_frame[info.current_buffer].swapchain_release_semaphore));
     }
 
     VkPipelineStageFlags wait_stage{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -709,19 +729,19 @@ void Application::present()
     infoS.commandBufferCount = 1;
     infoS.pCommandBuffers = &cmd;
     infoS.waitSemaphoreCount = 1;
-    infoS.pWaitSemaphores = &per_frame[info.current_buffer].swapchain_acquire_semaphore;
+    infoS.pWaitSemaphores = &info.per_frame[info.current_buffer].swapchain_acquire_semaphore;
     infoS.pWaitDstStageMask = &wait_stage;
     infoS.signalSemaphoreCount = 1;
-    infoS.pSignalSemaphores = &per_frame[info.current_buffer].swapchain_release_semaphore;
+    infoS.pSignalSemaphores = &info.per_frame[info.current_buffer].swapchain_release_semaphore;
     // Submit command buffer to graphics queue
-    VK_CHECK(vkQueueSubmit(info.present_queue, 1, &infoS, per_frame[info.current_buffer].queue_submit_fence));
+    VK_CHECK(vkQueueSubmit(info.present_queue, 1, &infoS, info.per_frame[info.current_buffer].queue_submit_fence));
 
     VkPresentInfoKHR present{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present.swapchainCount = 1;
     present.pSwapchains = &info.swap_chain;
     present.pImageIndices = &info.current_buffer;
     present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &per_frame[info.current_buffer].swapchain_release_semaphore;
+    present.pWaitSemaphores = &info.per_frame[info.current_buffer].swapchain_release_semaphore;
     // Present swapchain image
     vkQueuePresentKHR(info.present_queue, &present);
 }

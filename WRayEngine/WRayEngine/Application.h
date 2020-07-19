@@ -34,6 +34,10 @@
 #define APP_SHORT_NAME "WRayEngine"
 #define U_ASSERT_ONLY
 
+
+/* Amount of time, in nanoseconds, to wait for a command buffer to complete */
+#define FENCE_TIMEOUT 100000000*100
+
 #define VK_CHECK(x)                                                 \
 	do                                                              \
 	{                                                               \
@@ -82,6 +86,16 @@ typedef struct {
     std::vector<VkExtensionProperties> instance_extensions;
     std::vector<VkExtensionProperties> device_extensions;
 } layer_properties;
+
+
+struct PerFrame
+{
+    VkFence queue_submit_fence = VK_NULL_HANDLE;
+    VkCommandPool primary_command_pool = VK_NULL_HANDLE;
+    VkCommandBuffer primary_command_buffer = VK_NULL_HANDLE;
+    VkSemaphore swapchain_acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore swapchain_release_semaphore = VK_NULL_HANDLE;
+};
 
 /*
  * Structure for tracking information used / created / modified
@@ -195,21 +209,12 @@ struct sample_info {
     PFN_vkDebugReportMessageEXT dbgBreakCallback;
     std::vector<VkDebugReportCallbackEXT> debug_report_callbacks;
 
+    std::vector<PerFrame> per_frame;
     uint32_t current_buffer;
     uint32_t queue_family_count;
 
     VkViewport viewport;
     VkRect2D scissor;
-};
-
-
-struct PerFrame
-{
-    VkFence queue_submit_fence = VK_NULL_HANDLE;
-    VkCommandPool primary_command_pool = VK_NULL_HANDLE;
-    VkCommandBuffer primary_command_buffer = VK_NULL_HANDLE;
-    VkSemaphore swapchain_acquire_semaphore = VK_NULL_HANDLE;
-    VkSemaphore swapchain_release_semaphore = VK_NULL_HANDLE;
 };
 
 VkResult init_global_extension_properties(layer_properties& layer_props);
@@ -332,7 +337,7 @@ private:
     void present();
 
     void updateCPUData();
-    std::vector<PerFrame> per_frame;
+    void updateTexture();
     std::vector<VkSemaphore> recycled_semaphores;
     VkFence drawFence = {};
     sample_info info;
