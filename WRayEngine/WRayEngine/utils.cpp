@@ -574,6 +574,22 @@ bool memory_type_from_properties(struct sample_info& info, uint32_t typeBits, Vk
     return false;
 }
 
+bool memory_type_from_properties(struct VkPhysicalDeviceMemoryProperties& memory_properties, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex) {
+    // Search memtypes to find first index with those properties
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+        if ((typeBits & 1) == 1) {
+            // Type is available, does it match user properties?
+            if ((memory_properties.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask) {
+                *typeIndex = i;
+                return true;
+            }
+        }
+        typeBits >>= 1;
+    }
+    // No memory types matched, return failure
+    return false;
+}
+
 void init_depth_buffer(struct sample_info& info) {
     VkResult U_ASSERT_ONLY res;
     bool U_ASSERT_ONLY pass;
@@ -1357,7 +1373,7 @@ void init_device_queue(struct sample_info& info) {
         vkGetDeviceQueue(info.device, info.present_queue_family_index, 0, &info.present_queue);
     }
 }
-
+/*
 void init_vertex_buffer(struct sample_info& info, const void* vertexData, uint32_t dataSize, uint32_t dataStride,
     bool use_texture) {
     VkResult U_ASSERT_ONLY res;
@@ -1417,7 +1433,7 @@ void init_vertex_buffer(struct sample_info& info, const void* vertexData, uint32
     info.vi_attribs[1].location = 1;
     info.vi_attribs[1].format = use_texture ? VK_FORMAT_R32G32_SFLOAT : VK_FORMAT_R32G32B32A32_SFLOAT;
     info.vi_attribs[1].offset = 16;
-}
+}*/
 
 void init_descriptor_pool(struct sample_info& info, bool use_texture) {
     /* DEPENDS on init_uniform_buffer() and
@@ -1704,7 +1720,7 @@ void finalize_glslang() {
     glslang::FinalizeProcess();
 #endif
 }
-
+/*
 void init_shaders(struct sample_info &info, const char *vertShaderText, const char *fragShaderText) {
     VkResult U_ASSERT_ONLY res;
     bool U_ASSERT_ONLY retVal;
@@ -1758,7 +1774,7 @@ void init_shaders(struct sample_info &info, const char *vertShaderText, const ch
     }
 
     finalize_glslang();
-}
+}*/
 
 void init_pipeline_cache(struct sample_info& info) {
     VkResult U_ASSERT_ONLY res;
@@ -2536,11 +2552,11 @@ void destroy_depth_buffer(struct sample_info& info) {
     vkDestroyImage(info.device, info.depth.image, NULL);
     vkFreeMemory(info.device, info.depth.mem, NULL);
 }
-
+/*
 void destroy_vertex_buffer(struct sample_info& info) {
     vkDestroyBuffer(info.device, info.vertex_buffer.buf, NULL);
     vkFreeMemory(info.device, info.vertex_buffer.mem, NULL);
-}
+}*/
 
 void destroy_swap_chain(struct sample_info& info) {
     for (uint32_t i = 0; i < info.swapchainImageCount; i++) {

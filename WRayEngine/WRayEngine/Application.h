@@ -17,6 +17,9 @@
 
 #include "glslang/SPIRV/GlslangToSpv.h"
 
+#include "Buffer.h"
+#include "Shader.h"
+
 /* Number of descriptor sets needs to be the same at alloc,       */
 /* pipeline layout creation, and descriptor set layout creation   */
 #define NUM_DESCRIPTOR_SETS 1
@@ -178,11 +181,11 @@ struct sample_info {
         VkDescriptorImageInfo image_info;
     } texture_data;
 
-    struct {
-        VkBuffer buf;
-        VkDeviceMemory mem;
-        VkDescriptorBufferInfo buffer_info;
-    } vertex_buffer;
+    //struct {
+    //    VkBuffer buf;
+    //    VkDeviceMemory mem;
+    //    VkDescriptorBufferInfo buffer_info;
+    //} vertex_buffer;
     VkVertexInputBindingDescription vi_binding;
     VkVertexInputAttributeDescription vi_attribs[2];
 
@@ -317,6 +320,9 @@ void destroy_device(struct sample_info& info);
 void destroy_instance(struct sample_info& info);
 void destroy_window(struct sample_info& info);
 
+bool memory_type_from_properties(struct VkPhysicalDeviceMemoryProperties& memory_properties, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
+bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv);
+
 class Application
 {
 public:
@@ -338,6 +344,9 @@ private:
 
     void updateCPUData();
     void updateTexture();
+
+    Buffer vertexBuffer;
+    Shader vertexShader, fragmentShader;
     std::vector<VkSemaphore> recycled_semaphores;
     VkFence drawFence = {};
     sample_info info;

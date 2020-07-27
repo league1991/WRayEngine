@@ -454,9 +454,20 @@ void Application::initialize()
     frag_info.codeSize = sizeof(template_frag);
     frag_info.pCode = template_frag;
     //init_shaders(info, &vert_info, &frag_info);
-    init_shaders(info, vertShaderText, fragShaderText);
+    //init_shaders(info, vertShaderText, fragShaderText);
+
+    vertexShader.init(info.device, Shader::Type::SHADER_VERTEX, "E:/Code/WRayEngine/WRayEngine/WRayEngine/test.vert", "main");
+    fragmentShader.init(info.device, Shader::Type::SHADER_FRAGMENT, "E:/Code/WRayEngine/WRayEngine/WRayEngine/test.frag", "main");
+    info.shaderStages[0] = vertexShader.shaderStage;
+    info.shaderStages[1] = fragmentShader.shaderStage;
+
     init_framebuffers(info, depthPresent);
-    init_vertex_buffer(info, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), true);
+    //init_vertex_buffer(info, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), true);
+    vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), info.memory_properties, true);
+    info.vi_attribs[0] = vertexBuffer.vi_attribs[0];
+    info.vi_attribs[1] = vertexBuffer.vi_attribs[1];
+    info.vi_binding = vertexBuffer.vi_binding;
+
     init_descriptor_pool(info, true);
     init_descriptor_set(info, true);
     init_pipeline_cache(info);
@@ -547,9 +558,12 @@ void Application::destroy()
     destroy_pipeline_cache(info);
     destroy_textures(info);
     destroy_descriptor_pool(info);
-    destroy_vertex_buffer(info);
+    //destroy_vertex_buffer(info);
+    vertexBuffer.destroy(info.device);
     destroy_framebuffers(info);
-    destroy_shaders(info);
+    //destroy_shaders(info);
+    vertexShader.destroy(info.device);
+    fragmentShader.destroy(info.device);
     destroy_renderpass(info);
     destroy_descriptor_and_pipeline_layouts(info);
     destroy_uniform_buffer(info);
@@ -723,7 +737,8 @@ void Application::render()
         info.desc_set.data(), 0, NULL);
 
     const VkDeviceSize offsets[1] = { 0 };
-    vkCmdBindVertexBuffers(cmd, 0, 1, &info.vertex_buffer.buf, offsets);
+    //vkCmdBindVertexBuffers(cmd, 0, 1, &info.vertex_buffer.buf, offsets);
+    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer.buf, offsets);
     // Draw three vertices with one instance.
     vkCmdDraw(cmd, 12 * 3, 1, 0, 0);
     //vkCmdDraw(cmd, 3, 1, 0, 0);
