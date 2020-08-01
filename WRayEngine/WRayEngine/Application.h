@@ -19,6 +19,7 @@
 
 #include "Buffer.h"
 #include "Shader.h"
+#include "Mesh.h"
 
 /* Number of descriptor sets needs to be the same at alloc,       */
 /* pipeline layout creation, and descriptor set layout creation   */
@@ -346,6 +347,7 @@ private:
     void updateTexture();
 
     Buffer vertexBuffer;
+    Mesh m_mesh;
     Shader vertexShader, fragmentShader;
     std::vector<VkSemaphore> recycled_semaphores;
     VkFence drawFence = {};

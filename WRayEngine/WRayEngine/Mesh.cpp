@@ -14,6 +14,32 @@ Mesh::~Mesh()
 {
 }
 
+void Mesh::load(const char * fileName, VkDevice device, VkPhysicalDeviceMemoryProperties & memory_properties)
+{
+    ObjLoader loader;
+    loader.Load(fileName);
+
+    int numBuffers = loader.m_shapes.size();
+    m_vertexBuffers.resize(numBuffers);
+    for (int i = 0; i < numBuffers; i++)
+    {
+        std::vector<float> buffer;
+        int numVertices, sizeOfVertex;
+        loader.GetVertexBuffer(i, ObjLoader::VERTEX_ATTRIBUTE_POSITION | ObjLoader::VERTEX_ATTRIBUTE_TEXCOORD, buffer, numVertices, sizeOfVertex);
+        m_vertexBuffers[i].init(device, Buffer::Type::BUFFER_VERTEX, &buffer[0], numVertices, sizeOfVertex, memory_properties, true);
+    }
+}
+
+void Mesh::draw(VkCommandBuffer cmd)
+{
+    const VkDeviceSize offsets[1] = { 0 };
+    for (int i = 0; i < m_vertexBuffers.size(); i++)
+    {
+        vkCmdBindVertexBuffers(cmd, 0, 1, &m_vertexBuffers[i].buf, offsets);
+        vkCmdDraw(cmd, m_vertexBuffers[i].m_numVertex, 1, 0, 0);
+    }
+}
+
 void ObjLoader::Load(const char * fileName)
 {
     tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &m_warn, &m_err, fileName);

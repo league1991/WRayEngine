@@ -1,7 +1,9 @@
 #pragma once
 
 #include "tiny_obj_loader.h"
+#include <vulkan/vulkan.h>
 
+#include "Buffer.h"
 
 class ObjLoader
 {
@@ -15,7 +17,7 @@ public:
     };
     void Load(const char* fileName);
     bool GetVertexBuffer(int shapeIndex, unsigned type, std::vector<float>& buffer, int& numberVertices, int& sizeOfPerVertex);
-private:
+
     tinyobj::attrib_t m_attrib;
     std::vector<tinyobj::shape_t> m_shapes;
     std::vector<tinyobj::material_t> m_materials;
@@ -29,5 +31,10 @@ public:
     Mesh();
     ~Mesh();
 
+    void load(const char* fileName, VkDevice device, VkPhysicalDeviceMemoryProperties& memory_properties);
+
+    void draw(VkCommandBuffer cmd);
+
+    std::vector<Buffer> m_vertexBuffers;
 };
 

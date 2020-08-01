@@ -465,7 +465,7 @@ void Application::initialize()
     //init_vertex_buffer(info, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), true);
 
 
-    const char *filename = "E:\\Code\\WRayEngine\\WRayEngine\\WRayEngine\\ball.obj";
+    const char *filename = "E:\\Code\\WRayEngine\\WRayEngine\\WRayEngine\\ball_cube.obj";
     ObjLoader loader;
     loader.Load(filename);
 
@@ -476,9 +476,11 @@ void Application::initialize()
 
     //vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), info.memory_properties, true);
     vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, &buffer[0], numVertex, sizeOfPerVertex, info.memory_properties, true);
-    info.vi_attribs[0] = vertexBuffer.vi_attribs[0];
-    info.vi_attribs[1] = vertexBuffer.vi_attribs[1];
-    info.vi_binding = vertexBuffer.vi_binding;
+
+    m_mesh.load(filename, info.device, info.memory_properties);
+    info.vi_attribs[0] = m_mesh.m_vertexBuffers[0].vi_attribs[0];
+    info.vi_attribs[1] = m_mesh.m_vertexBuffers[0].vi_attribs[1];
+    info.vi_binding = m_mesh.m_vertexBuffers[0].vi_binding;
 
     init_descriptor_pool(info, true);
     init_descriptor_set(info, true);
@@ -571,7 +573,7 @@ void Application::destroy()
     destroy_textures(info);
     destroy_descriptor_pool(info);
     //destroy_vertex_buffer(info);
-    vertexBuffer.destroy(info.device);
+    //vertexBuffer.destroy(info.device);
     destroy_framebuffers(info);
     //destroy_shaders(info);
     vertexShader.destroy(info.device);
@@ -748,12 +750,14 @@ void Application::render()
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline_layout, 0, NUM_DESCRIPTOR_SETS,
         info.desc_set.data(), 0, NULL);
 
-    const VkDeviceSize offsets[1] = { 0 };
+    //const VkDeviceSize offsets[1] = { 0 };
     //vkCmdBindVertexBuffers(cmd, 0, 1, &info.vertex_buffer.buf, offsets);
-    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer.buf, offsets);
+    //vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer.buf, offsets);
     // Draw three vertices with one instance.
-    vkCmdDraw(cmd, vertexBuffer.m_numVertex, 1, 0, 0);
+    //vkCmdDraw(cmd, vertexBuffer.m_numVertex, 1, 0, 0);
     //vkCmdDraw(cmd, 3, 1, 0, 0);
+
+    m_mesh.draw(cmd);
 
     // Complete render pass.
     vkCmdEndRenderPass(cmd);
