@@ -14,13 +14,14 @@ public:
     Buffer() {}
     ~Buffer();
 
-    void init(VkDevice device, Type type, const void* data, int dataSize, int dataStride, VkPhysicalDeviceMemoryProperties& memory_properties, bool useUV);
+    void init(VkDevice device, Type type, const void* data, int vertexCount, int dataStride, VkPhysicalDeviceMemoryProperties& memory_properties, bool useUV);
     void destroy(VkDevice device)
     {
         vkDestroyBuffer(device, buf, NULL);
         vkFreeMemory(device, mem, NULL);
     }
 //private:
+    int m_numVertex;
     VkBuffer buf;
     VkDeviceMemory mem;
     VkDescriptorBufferInfo buffer_info;

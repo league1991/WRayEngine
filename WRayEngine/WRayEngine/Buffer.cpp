@@ -5,8 +5,10 @@
 
 
 
-void Buffer::init(VkDevice device, Type type, const void* data, int dataSize, int dataStride, VkPhysicalDeviceMemoryProperties& memory_properties, bool useUV)
+void Buffer::init(VkDevice device, Type type, const void* data, int numVertex, int dataStride, VkPhysicalDeviceMemoryProperties& memory_properties, bool useUV)
 {
+    int dataSize = numVertex * dataStride;
+    m_numVertex = numVertex;
     VkBufferUsageFlags usage;
     switch (type)
     {
@@ -71,13 +73,13 @@ void Buffer::init(VkDevice device, Type type, const void* data, int dataSize, in
 
     vi_attribs[0].binding = 0;
     vi_attribs[0].location = 0;
-    vi_attribs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vi_attribs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     vi_attribs[0].offset = 0;
 
     vi_attribs[1].binding = 0;
     vi_attribs[1].location = 1;
     vi_attribs[1].format = useUV ? VK_FORMAT_R32G32_SFLOAT : VK_FORMAT_R32G32B32A32_SFLOAT;
-    vi_attribs[1].offset = 16;
+    vi_attribs[1].offset = 12;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //VkResult res;
     //VkBufferCreateInfo buf_info = {};

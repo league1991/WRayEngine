@@ -1,5 +1,5 @@
 #include "Application.h"
-
+#include "Mesh.h"
 
 
 
@@ -463,7 +463,19 @@ void Application::initialize()
 
     init_framebuffers(info, depthPresent);
     //init_vertex_buffer(info, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), true);
-    vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), info.memory_properties, true);
+
+
+    const char *filename = "E:\\Code\\WRayEngine\\WRayEngine\\WRayEngine\\ball.obj";
+    ObjLoader loader;
+    loader.Load(filename);
+
+    std::vector<float> buffer;
+    int numVertex, sizeOfPerVertex;
+    loader.GetVertexBuffer(0, ObjLoader::VERTEX_ATTRIBUTE_POSITION | ObjLoader::VERTEX_ATTRIBUTE_TEXCOORD,
+        buffer, numVertex, sizeOfPerVertex);
+
+    //vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, g_vb_texture_Data, sizeof(g_vb_texture_Data), sizeof(g_vb_texture_Data[0]), info.memory_properties, true);
+    vertexBuffer.init(info.device, Buffer::Type::BUFFER_VERTEX, &buffer[0], numVertex, sizeOfPerVertex, info.memory_properties, true);
     info.vi_attribs[0] = vertexBuffer.vi_attribs[0];
     info.vi_attribs[1] = vertexBuffer.vi_attribs[1];
     info.vi_binding = vertexBuffer.vi_binding;
@@ -740,7 +752,7 @@ void Application::render()
     //vkCmdBindVertexBuffers(cmd, 0, 1, &info.vertex_buffer.buf, offsets);
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer.buf, offsets);
     // Draw three vertices with one instance.
-    vkCmdDraw(cmd, 12 * 3, 1, 0, 0);
+    vkCmdDraw(cmd, vertexBuffer.m_numVertex, 1, 0, 0);
     //vkCmdDraw(cmd, 3, 1, 0, 0);
 
     // Complete render pass.
