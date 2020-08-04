@@ -10,6 +10,7 @@
 
 #include <WinUser.h>
 #include <wingdi.h>
+#include <windowsx.h>
 
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"
@@ -238,7 +239,7 @@ VkResult init_enumerate_device(struct sample_info& info,
 VkBool32 demo_check_layers(const std::vector<layer_properties>& layer_props,
     const std::vector<const char*>& layer_names);
 void init_connection(struct sample_info& info);
-void init_window(struct sample_info& info);
+void init_window(struct sample_info& info, WNDPROC WndProc);
 void init_queue_family_index(struct sample_info& info);
 void init_presentable_image(struct sample_info& info);
 void execute_queue_cmdbuf(struct sample_info& info,
@@ -327,9 +328,6 @@ bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std
 class Application
 {
 public:
-    Application() {}
-    ~Application();
-
     void initialize();
 
     bool shouldExit() { return false; }
@@ -338,13 +336,37 @@ public:
 
     void destroy();
 
+    static Application* instance();
+
+    void onMouseMove(int x, int y);
+    void onMouseWheel(float delta)
+    {
+        m_cameraDist += delta * 0.1f;
+    }
+    void onMouseButton(UINT button);
+    void onKeyDown(UINT wParam, UINT lParam) {}
+    void onKeyUp(UINT wParam, UINT lParam) {}
 private:
+    Application() {}
+    ~Application();
+
     void acquireSemaphore();
     void render();
     void present();
 
     void updateCPUData();
     void updateTexture();
+
+    static Application* s_instance;
+
+    glm::ivec2 m_lastMousePos{ 0,0 };
+    bool m_isLeftButton = false;
+    bool m_isMiddleButton = false;
+    bool m_isRightButton = false;
+
+    glm::vec2 m_cameraAngle;
+    float m_cameraDist = 10.f;
+    glm::mat4x4 m_modelMatrix;
 
     Buffer vertexBuffer;
     Mesh m_mesh;

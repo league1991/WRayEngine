@@ -379,24 +379,8 @@ void init_connection(struct sample_info& info) {
 static void run(struct sample_info* info) { /* Placeholder for samples that want to show dynamic content */
 }
 
-// MS-Windows event handling function:
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    struct sample_info* info = reinterpret_cast<struct sample_info*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-    switch (uMsg) {
-    case WM_CLOSE:
-        PostQuitMessage(0);
-        break;
-    case WM_PAINT:
-        run(info);
-        break;// return 0;
-    default:
-        break;
-    }
-    return (DefWindowProc(hWnd, uMsg, wParam, lParam));
-}
-
-void init_window(struct sample_info& info) {
+void init_window(struct sample_info& info, WNDPROC WndProc) {
     WNDCLASSEX win_class;
     assert(info.width > 0);
     assert(info.height > 0);
@@ -1824,7 +1808,7 @@ void init_pipeline(struct sample_info& info, VkBool32 include_depth, VkBool32 in
     rs.flags = 0;
     rs.polygonMode = VK_POLYGON_MODE_FILL;
     rs.cullMode = VK_CULL_MODE_BACK_BIT;
-    rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.depthClampEnable = VK_FALSE;
     rs.rasterizerDiscardEnable = VK_FALSE;
     rs.depthBiasEnable = VK_FALSE;

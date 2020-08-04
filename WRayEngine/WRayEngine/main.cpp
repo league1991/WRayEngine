@@ -14,15 +14,15 @@ int main(int argc, char* argv[]) {
     //loader.GetVertexBuffer(0,ObjLoader::VERTEX_ATTRIBUTE_POSITION | ObjLoader::VERTEX_ATTRIBUTE_COLOR,
     //    buffer, numVertex, sizeOfPerVertex);
 
-    Application app;
+    Application* app = Application::instance();
 
-    app.initialize();
+    app->initialize();
 
-    while (!app.shouldExit())
+    while (!app->shouldExit())
     {
-        app.update();
+        app->update();
     }
 
-    app.destroy();
+    app->destroy();
     return 0;
 }

@@ -3,6 +3,43 @@
 
 
 
+Application* Application::s_instance = nullptr;
+
+void Application::onMouseMove(int x, int y)
+{
+    glm::ivec2 thisMousePos(x, y);
+    glm::vec2 deltaPos = thisMousePos - m_lastMousePos;
+
+    if (m_isLeftButton)
+    {
+        //m_modelMatrix = glm::rotate(m_modelMatrix, deltaPos.x * 0.01f, glm::vec3(1, 0, 0));
+        //m_modelMatrix = glm::rotate(m_modelMatrix, deltaPos.y * 0.01f, glm::vec3(0, 0, 1));
+        m_cameraAngle += deltaPos * 0.01f;
+    }
+
+    m_lastMousePos = thisMousePos;
+}
+
+void Application::onMouseButton(UINT button)
+{
+    switch (button)
+    {
+    case WM_LBUTTONDOWN:
+        m_isLeftButton = true; break;
+    case WM_LBUTTONUP:
+        m_isLeftButton = false; break;
+    case WM_MBUTTONDOWN:
+        m_isMiddleButton = true; break;
+    case WM_MBUTTONUP:
+        m_isMiddleButton = false; break;
+    case WM_RBUTTONDOWN:
+        m_isRightButton = true; break;
+    case WM_RBUTTONUP:
+        m_isRightButton = false; break;
+    default:
+        break;
+    }
+}
 
 Application::~Application() {  }
 
@@ -412,6 +449,61 @@ static const char *fragShaderText =
 //"}\n"
 ;
 
+
+// MS-Windows event handling function:
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    struct sample_info* info = reinterpret_cast<struct sample_info*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
+    Application* app = Application::instance();
+    switch (uMsg) {
+    case WM_CLOSE:
+        PostQuitMessage(0);
+        break;
+    case WM_PAINT:
+        //run(info);
+        break;// return 0;
+    case WM_MOUSEMOVE:
+    {
+        const int x = GET_X_LPARAM(lParam);
+        const int y = GET_Y_LPARAM(lParam);
+        app->onMouseMove(x, y);
+        break;
+    }
+    case WM_MOUSEWHEEL:
+    {
+        app->onMouseWheel((SHORT)HIWORD(wParam) / (float)WHEEL_DELTA);
+        break;
+    }
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+    {
+        app->onKeyDown(wParam, lParam);
+        break;
+    }
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+    {
+        app->onKeyUp(wParam, lParam);
+        break;
+    }
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_XBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_XBUTTONUP:
+    {
+        app->onMouseButton(uMsg);
+        break;
+    }
+    default:
+        break;
+    }
+    return (DefWindowProc(hWnd, uMsg, wParam, lParam));
+}
+
 void Application::initialize()
 {
     VkResult U_ASSERT_ONLY res;
@@ -426,7 +518,7 @@ void Application::initialize()
     init_enumerate_device(info);
     init_window_size(info, 500, 500);
     init_connection(info);
-    init_window(info);
+    init_window(info, WndProc);
     init_swapchain_extension(info);
     init_device(info);
     //init_command_pool(info);
@@ -590,6 +682,15 @@ void Application::destroy()
     destroy_instance(info);
 }
 
+Application * Application::instance()
+{
+    if (s_instance == nullptr)
+    {
+        s_instance = new Application();
+    }
+    return s_instance;
+}
+
 void Application::acquireSemaphore()
 {
     // acquire semaphore
@@ -651,13 +752,23 @@ void Application::updateCPUData()
     float fov = glm::radians(45.0f);
     info.Projection = glm::perspective(fov, static_cast<float>(info.width) / static_cast<float>(info.height), 0.1f, 100.0f);
     static float offset = 0.f;
-    info.View = glm::lookAt(glm::vec3(-5, 3, -10+ offset),  // Camera is at (-5,3,-10), in World Space
-        glm::vec3(0, 0, 0),     // and looks at the origin
-        glm::vec3(0, -1, 0)     // Head is up (set to 0,-1,0 to look upside-down)
-    );
-    offset += 0.01f;
+    glm::vec3 camPos(
+        cos(m_cameraAngle.x)* sin(m_cameraAngle.y),
+        sin(m_cameraAngle.x)* sin(m_cameraAngle.y),
+        cos(m_cameraAngle.y));
+    glm::vec3 camUp(
+        cos(m_cameraAngle.x)* cos(m_cameraAngle.y),
+        sin(m_cameraAngle.x)* cos(m_cameraAngle.y),
+        -sin(m_cameraAngle.y));
+    camPos *= m_cameraDist;
 
-    info.Model = glm::mat4(1.0f);
+    info.View = glm::lookAt(camPos,  // Camera is at (-5,3,-10), in World Space
+        glm::vec3(0, 0, 0),     // and looks at the origin
+        camUp     // Head is up (set to 0,-1,0 to look upside-down)
+    );
+    //offset += 0.01f;
+
+    info.Model = m_modelMatrix;// glm::mat4(1.0f);
     // Vulkan clip space has inverted Y and half Z.
     info.Clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.5f, 1.0f);
 
